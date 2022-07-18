@@ -35,7 +35,7 @@ export class DocumentEditComponent implements OnInit {
 				}
 				//if it exists on params..
 				//get and store the doc with that id in original document prop
-				this.originalDocument = this.documentService.getdocument(id);
+				this.originalDocument = this.documentService.getDocument(id);
 
 				//if not document is found with that id...
 				if (!this.originalDocument) {

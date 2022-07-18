@@ -1,125 +1,181 @@
-import { Injectable, EventEmitter  } from '@angular/core';
+import { Injectable  } from '@angular/core';
 import { Document } from './document.model';
-import { MOCKDOCUMENTS } from './MOCKDOCUMENTS';
 import { Subject } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DocumentsService {
-  documents: Document[];
+
+  documents: Document[] = [];
+  // //event emiter for changes in the document
+  // documentChangedEvent = new EventEmitter<Document[]>();
 
   //property for max id
   maxDocumentId: number;
 
+  //subject property
   documentListChangedEvent = new Subject<Document[]>();
 
-  constructor() {
+  constructor(private http: HttpClient) {
     //init documents to be the ones coming from mock
-    this.documents = MOCKDOCUMENTS;
-
+    // this.documents = MOCKDOCUMENTS;
+    this.getDocuments();
+    //get the max id at init time
     this.maxDocumentId = this.getMaxId();
   }
 
   //method to get all documents
-  getDocuments(): Document[] {
-    //return a copy of the array of documents
-    return this.documents.slice();
+  getDocuments() {
+    // //return a copy of the array of documents
+    // return this.documents.slice();
+
+    //use http get
+    this.http.get('https://localhost:3000/documents')
+      .subscribe(
+        //sucess function
+        (documents: Document[]) => {
+          //assign the array of documents received to the documents class attribute
+          this.documents = documents;
+          // get the maximum value used for the id property in the documents list
+          this.maxDocumentId = this.getMaxId();
+          //sort alphabetically by name
+          this.documents.sort((a, b) => (a.name < b.name) ? 1 : (a.name > b.name) ? -1 : 0)
+          //signal that the list has changed
+          this.documentListChangedEvent.next(this.documents.slice());
+        },
+        (error: any) => {
+          console.log(error);
+        }
+      )
   }
 
   //method to get a single specific document
-  getdocument(id: String): Document {
-    //loop through all the documents
+  getDocument(id: string): Document {
     for (const document of this.documents) {
-      //if ids match
       if (document.id === id) {
         return document;
       }
-    //if no id is found...
     }
     return null;
   }
 
-    //method to get max id number in document list
-    getMaxId(): number {
-      //variable to hold max Id
-      let maxId = 0;
-      //loop through the document list
-      for (const document of this.documents) {
-        //get current id as a number
-        const currentId = +document.id;
-        //if the current id is greater than max ID...
-        if (currentId > maxId) {
-          //then max id is the current id
-          maxId = currentId;
-        }
+  //method to get max id number in document list
+  getMaxId(): number {
+    //variable to hold max Id
+    let maxId = 0;
+    //loop through the document list
+    for (const document of this.documents) {
+      //get current id as a number
+      const currentId = +document.id;
+      //if the current id is greater than max ID...
+      if (currentId > maxId) {
+        //then max id is the current id
+        maxId = currentId;
       }
-      //return that max id
-      return maxId;
     }
-  
-    //method to add a document when user press add button
-    addDocument(newDocument: Document) {
-      //if null or undef...
-      if (newDocument === null || newDocument === undefined) {
-        //exit function
-        return;
-      }
-  
-      //if document exists..
-      //increment id number and assign to new document (as string)
-      this.maxDocumentId++;
-      newDocument.id = this.maxDocumentId.toString();
-      //push unto list
-      this.documents.push(newDocument);
-      //create copy of list and emit/signal a change passing the copy
-      const documentListClone = this.documents.slice();
-      this.documentListChangedEvent.next(documentListClone);
-    }
-  
-    //method to update/replace an existing document
-    updateDocument(originalDocument: Document, newDocument: Document) {
-      //check if document exists...
-      if (originalDocument === null || originalDocument === undefined || newDocument === null || newDocument === undefined) {
-        //if not, exit function
-        return;
-      }
-  
-      //find position/index of original document
-      const pos = this.documents.indexOf(originalDocument);
-      //if the position is less than 0 (meaning it is not in the list)...
-      if (pos < 0) {
-        //exit
-        return;
-      }
-  
-      //set the id of new document to be tht of the original
-      newDocument.id = originalDocument.id;
-      //set the document in the list to be the new document
-      document[pos] = newDocument;
-      //create copy
-      const documentListClone = this.documents.slice();
-      //emit/signal a change passing the copy
-      this.documentListChangedEvent.next(documentListClone);
+    //return that max id
+    return maxId;
+  }
+
+  addDocument(document: Document) {
+    //check if document is defined
+    if (!document) {
+      //if so, exit function
+      return;
     }
 
+       //create header
+       const headers = new HttpHeaders({
+        'Content-Type': 'application/json'
+      });
+  
+      //convert object to string to send on request
+      document.id = '';
+      const strDocument = JSON.stringify(document);
+  
+      //send post request with document and header
+      this.http.post('http://localhost:3000/documents', strDocument, { headers: headers })
+        .subscribe(
+          (documents: Document[]) => {
+            //assign document list
+            this.documents = documents;
+            //emit the change
+            this.documentListChangedEvent.next(this.documents.slice());
+          });
+    }
+
+
+  //method to update/replace an existing document
+  updateDocument(originalDocument: Document, newDocument: Document) {
+    //check if documents are undefined
+    if (!originalDocument || !newDocument) {
+      //if so, exit
+      return;
+    }
+
+    //find position/index of original document
+    const pos = this.documents.indexOf(originalDocument);
+    //if the position is less than 0 (meaning it is not in the list)...
+    if (pos < 0) {
+      //exit
+      return;
+    }
+
+    //set headers
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    //convert document object to string
+    const strDocument = JSON.stringify(newDocument);
+
+    //send patch request with original document id, new document object and headers
+    this.http.patch('http://localhost:3000/documents/' + originalDocument.id
+      , strDocument
+      , { headers: headers }).subscribe(
+        (documents: Document[]) => {
+          //assign updated document list
+          this.documents = documents;
+          //emit change
+          this.documentListChangedEvent.next(this.documents.slice());
+        });
+  }
 
   deleteDocument(document: Document) {
     //check if an existent document was passed
     if (document === null || document === undefined) {
       return;
     }
-    //get position of document on list
-    const pos = this.documents.indexOf(document);
-
-    //if there is no document (index less than 0), exit. 
-    if (pos < 0) {
-      return;
-    }
-    //removed document at specified position
-    this.documents.splice(pos, 1);
-    //emit event to signal that a change has been made, and pass it a new copy of the document list
-    this.documentListChangedEvent.next(this.documents.slice());
+    //send request to delete using document id in params
+    this.http.delete('http://localhost:3000/documents/' + document.id)
+      .subscribe(
+        (documents: Document[]) => {
+          //assign modified document list
+          this.documents = documents;
+          //emit changes
+          this.documentListChangedEvent.next(this.documents.slice());
+        });
   }
 
+  // //method to store documents in database with put request
+  // storeDocuments() {
+  //   //stringify the list of documnts
+  //   let documents = JSON.stringify(this.documents);
+
+  //   //create header for content type
+  //   const headers = new HttpHeaders({
+  //     'Content-Type': 'application/json'
+  //   });
+
+  //   //put method with url, documents object to replace, and headers
+  //   this.http.put('http://localhost:3000/documents/' + originalDocument.id, documents, { headers: headers })
+  //     .subscribe(
+  //       () => {
+  //         //once a response has been received, signal that the document list has changed, send copy of list
+  //         this.documentListChangedEvent.next(this.documents.slice());
+  //       }
+  //     )
+  // }
 }

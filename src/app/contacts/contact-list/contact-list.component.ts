@@ -10,6 +10,10 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./contact-list.component.css']
 })
 export class ContactListComponent implements OnInit, OnDestroy {
+
+   //property for search term
+   term: String = '';
+
   // list of contacts
   contacts: Contact[] = [];
 
@@ -20,12 +24,12 @@ export class ContactListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
-    this.contacts = this.contactService.getContacts();
-
     this.subscription = this.contactService.contactListChangedEvent
       .subscribe((contacts: Contact[]) => {
         this.contacts = contacts;
       });
+
+      this.contactService.getContacts();
 
   }
 
@@ -36,6 +40,13 @@ export class ContactListComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.subscription.unsubscribe();
   }
+
+   //method to react on key press for search
+   onKeyPress(value: String) {
+    //assign the value to the term prop
+    this.term = value;
+  }
+
 
 
 }
