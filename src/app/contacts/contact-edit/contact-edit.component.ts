@@ -39,7 +39,10 @@ export class ContactEditComponent implements OnInit {
 				}
 
 				//if it does exist, retrieve contact by id from service and store in original
-				this.originalContact = this.contactService.getContact(id);
+				// this.originalContact = this.contactService.getContact(id);
+				this.contactService.getContact(params['id']).subscribe((contact: Contact) => {
+					this.contact = contact
+				})
 
 				//if a contact with tht id does not exists...
 				if (!this.originalContact) {

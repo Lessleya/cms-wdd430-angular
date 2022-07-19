@@ -1,19 +1,17 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+// const Schema = mongoose.Schema;
 
-let sequenceSchema = new Schema({
+const sequenceSchema = new mongoose.Schema({
   maxDocumentId: {
     type: Number,
     required: true
   },
   maxMessageId: {
-    type: Number,
-    required: true
+    type: Number
   },
   maxContactId: {
-    type: Number,
-    required: true
+    type: Number
   }
 });
 
-module.exports = mongoose.model('Sequence', sequenceSchema)
+module.exports = mongoose.model('Sequences', sequenceSchema)

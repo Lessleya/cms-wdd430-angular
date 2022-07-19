@@ -19,7 +19,7 @@ export class MessageItemComponent implements OnInit {
   ngOnInit() {
     this.contactService.getContact(this.message.sender)
       .subscribe(contactData => {
-        this.messageSender = contactData.contact.name;
+        this.messageSender = contactData.name;
       })
     // //console.log('this is ' + contact);
     // //assign name of contact to message sender

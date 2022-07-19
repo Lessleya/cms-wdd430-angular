@@ -70,7 +70,7 @@ export class ContactService {
     // }
     // return null;
 
-    return this.http.get<{ message: string, contact: Contact }>('http://localhost:3000/contacts/' + id);
+    return this.http.get<Contact>('http://localhost:3000/contacts/' + id);
   }
 
   //method to get max id number in contact list
